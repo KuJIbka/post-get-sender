@@ -1,0 +1,163 @@
+{% extends 'Common\\View\\base.twig' %}
+
+{% block content %}
+
+    <div id="mainFrame" class="frame col-12 group">
+        <form id="main" class="group marginAuto">
+           <div class="col-6">
+               <div class="colPad">
+                   <div class="row rowPad">
+                       <div class="col-1">
+                           <label for="urlInput">Url</label>
+                       </div>
+                       <div class="col-10">
+                           <input id="urlInput" type="text" class="col-12" value="http://post-get-sender.loc/test/headers2">
+                       </div>
+                       <div class="col-1">
+                           <button id="nextPage" disabled="disabled">→</button>
+                       </div>
+                   </div>
+                   <div class="row rowPad">
+                       <div class="col-4">
+                           <label for="sendTypeSelect">Type</label>
+                           <select id="sendTypeSelect">
+                               <option>GET</option>
+                               <option>POST</option>
+                               <option>PUT</option>
+                               <option>DELETE</option>
+                           </select>
+                       </div>
+                       <div class="col-8 alignRight">
+                           <label for="autoRedirectType">Auto redirect type</label>
+                           <select id="autoRedirectType">
+                               <option value="1">No redirect</option>
+                               <option value="2">Always redirect</option>
+                           </select>
+                       </div>
+                   </div>
+                   <div class="row rowPad">
+                       <div class="col-5">
+                           <button data-href="#postDataFrame" class="switchFrame">Values</button>
+                           <button data-href="#headerDataFrame" class="switchFrame">Headers</button>
+                       </div>
+                       <div class="col-7 alignRight">
+                           <label for="throwValueOnRedirect">Throw values on redirect</label> <input id="throwValueOnRedirect" type="checkbox">
+                       </div>
+                   </div>
+               </div>
+           </div>
+           <div class="col-3">
+               <div class="colPad">
+                   <div class="row rowPad">
+                       <label for="autoPickupCookies">Auto pickup cookies</label> <input id="autoPickupCookies" type="checkbox" />
+                   </div>
+                   <div class="row rowPad">
+                       <button data-href="#cookieDataFrame" class="switchFrame">Cokkies</button>
+                   </div>
+                   <div class="row rowPad">
+                       <button id="pickupCookie">Pickup</button>
+                   </div>
+               </div>
+           </div>
+           <div class="col-3">
+               <div class="colPad">
+                   <div class="row rowPad">
+                       <label for="timerEnable">Timer enable</label><input id="timerEnable" type="checkbox" />
+                   </div>
+                   <div class="row rowPad">
+                       <label for="timer">Timer</label> <input id="timer" type="text" value="1000" />
+                   </div>
+                   <div class="row rowPad">
+                       <label for="baseLogin">Login: </label><input type="text" id="baseLogin" /><br/>
+                       <label for="basePass">Pass: </label><input type="text" id="basePass" />
+                   </div>
+               </div>
+           </div>
+           <div class="col-12 clearBoth">
+               <div class="colPad">
+                   <button id="sendButton" class="col-12">SEND</button>
+               </div>
+           </div>
+        </form>
+        <ul data-href="#mainTabsWrapper" class="tabsButtons group col-12">
+           <li class="active"><a href="#answerContent">Answer</a></li><li><a href="#htmlContent">Html</a></li>
+           <li><a href="#headersContent">Headers</a></li>
+           <li><a href="#requestData">Request</a></li>
+
+        </ul>
+        <div id="mainTabsWrapper" class="tabsContentWrapper">
+           <div id="answerContent" class="pad10"></div>
+           <div id="htmlContent" class="hide pad10">
+               <iframe id="htmlFrameWindow" class="col-12" height="500px"></iframe>
+           </div>
+           <div id="headersContent" class="hide pad10"></div>
+           <div id="requestData" class="hide pad10"></div>
+        </div>
+    </div>
+
+    <div id="postDataFrame" class="frame col-12 hide">
+        <div class="row">
+            <div class="col-4 alignCenter">
+                <h3>Key</h3>
+            </div>
+            <div class="col-offset-1 col-7 alignCenter">
+                <h3>Value</h3>
+            </div>
+        </div>
+        <div id="postDataContent">
+        </div>
+        <div class="row col-12 rowPad">
+            <button id="addData">Add data</button>
+            <button data-href="#mainFrame" id="saveData" class="switchFrame">Save data</button>
+        </div>
+    </div>
+
+    <div id="cookieDataFrame" class="frame col-12 hide">
+        <div class="row">
+            <div class="col-4 alignCenter">
+                <h3>Key</h3>
+            </div>
+            <div class="col-offset-1 col-7 alignCenter">
+                <h3>Value</h3>
+            </div>
+        </div>
+        <div id="cookieDataContent">
+        </div>
+        <div class="row col-12 rowPad">
+            <button id="addCookieData">Add data</button>
+            <button data-href="#mainFrame" id="saveCookieData" class="switchFrame">Save data</button>
+        </div>
+    </div>
+
+    <div id="headerDataFrame" class="frame col-12 hide">
+        <div class="row">
+            <div class="col-4 alignCenter">
+                <h3>Key</h3>
+            </div>
+            <div class="col-offset-1 col-7 alignCenter">
+                <h3>Value</h3>
+            </div>
+        </div>
+        <div id="headerDataContent">
+        </div>
+        <div class="row col-12 rowPad">
+            <button id="addheaderData">Add data</button>
+            <button data-href="#mainFrame" id="saveheaderData" class="switchFrame">Save data</button>
+        </div>
+    </div>
+
+    {% verbatim %}
+    <script id="rowDataTemplate" type="text/x-handlebars-template">
+        <div class="row col-12 rowPad">
+            <div class="colPad">
+                <div class="col-4">
+                    <input type="text" class="col-12" value="{{#if key}}{{ key }}{{/if }}">
+                </div>
+                <div class="col-offset-1 col-7">
+                    <input type="text" class="col-12" value="{{#if key}}{{ value }}{{/if }}">
+                </div>
+            </div>
+        </div>
+    </script>
+    {% endverbatim %}
+{% endblock %}
