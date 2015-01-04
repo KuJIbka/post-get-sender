@@ -37,6 +37,9 @@ class DefaultController extends BaseController
             'verify' => false
         ];
         if (!empty($cookies)) {
+            foreach ($cookies as $cookName => $val) {
+                $cookies[$cookName] = $this->getMyCodeHelper()->parseString($val);
+            }
             $options['cookies'] = $cookies;
         }
 
@@ -53,18 +56,23 @@ class DefaultController extends BaseController
         $url = $this->getUrlHelper()->getFullUrl($url);
 
         $request = $client->createRequest($reqType, $url, $options);
+        if (!empty($headers)) {
+            foreach ($headers as $headName => $val) {
+                $headers[$headName] = $this->getMyCodeHelper()->parseString($val);
+            }
+        }
         $request->setHeaders($headers);
         if ($reqType == 'POST') {
             /** @var PostBodyInterface $requestBody */
             $requestBody = $request->getBody();
             foreach ($data as $name => $val) {
-                $requestBody->setField($name, $val);
+                $requestBody->setField($name, $this->getMyCodeHelper()->parseString($val));
             }
         }
         if ($reqType == 'GET') {
             $requestQuery = $request->getQuery();
             foreach ($data as $name => $val) {
-                $requestQuery->add($name, $val);
+                $requestQuery->add($name, $this->getMyCodeHelper()->parseString($val));
             }
         }
         $response = $client->send($request);
