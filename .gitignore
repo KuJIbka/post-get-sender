@@ -2,3 +2,4 @@
 .sync
 vendor
 ./app/config/Config.php
+composer.lock
