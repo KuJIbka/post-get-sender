@@ -76,10 +76,7 @@
             <div class="col-1">
                 <div class="colPad">
                     <div class="row rowPad">
-                        <button>Load Preset</button>
-                    </div>
-                    <div class="row rowPad">
-                        <button>Save Preset</button>
+                        <button data-href="#loadPresetFrame" class="switchFrame">Presets</button>
                     </div>
                 </div>
             </div>
@@ -153,6 +150,25 @@
         <div class="row col-12 rowPad">
             <button id="addheaderData">Add data</button>
             <button data-href="#mainFrame" id="saveheaderData" class="switchFrame">Save data</button>
+        </div>
+    </div>
+
+    <div id="loadPresetFrame" class="col-offset-3 frame col-6 hide">
+        <div id="presetWrapper">
+            <ul id="presetsContent">
+
+            </ul>
+            <div class="row rowPad">
+                <div class="col-3">
+                    <button id="loadPreset">Load</button>
+                    <button id="deletePreset">Delete</button>
+                    <button id="quitFromPresets" data-href="#mainFrame" class="switchFrame">Quit</button>
+                </div>
+               <div class="col-9 alignRight">
+                   <button id="savePreset">Save Preset</button>
+                   <label for="presetName">Preset name: </label> <input type="text" id="presetName" />
+               </div>
+            </div>
         </div>
     </div>
 

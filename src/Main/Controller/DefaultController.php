@@ -13,6 +13,7 @@ class DefaultController extends BaseController
 {
     public function index(Application $app)
     {
+
         return $app['twig']->render('Main\View\index.twig', ['html' => '']);
     }
 
@@ -109,6 +110,63 @@ class DefaultController extends BaseController
             $answer['nextPage'] = $nextPage;
             $answer['requestTime'] = microtime(true) - $startTime;
             $answer['requestUrl'] = $url;
+        }
+        return new JsonResponse($answer);
+    }
+
+    public function loadPresets(Application $app)
+    {
+        $answer['OK'] = 1;
+        $answer['presets'] = $this->getDb($app)->getPresets();
+        return new JsonResponse($answer);
+    }
+
+    public function savePreset(Application $app, Request $req)
+    {
+        $presetName = $req->get('presetName', '');
+        $url = $req->get('url', '');
+        $reqType = $req->get('reqType', 'GET');
+
+        $data = $req->get('data', []);
+        $cookies = $req->get('cookies', []);
+        $headers = $req->get('headers', []);
+        $redirectType = +$req->get('redirectType', 1);
+
+        $baseLogin = $req->get('baseLogin', '');
+        $basePass = $req->get('basePass', '');
+
+        $autoPickup = $req->get('autoPickup', false);
+        $throwValues = $req->get('throwValues', false);
+        $timerEnable = $req->get('timerEnable', false);
+        $timerVal = $req->get('timerVal', '0');
+
+        $allData = [
+            'url' => $url,
+            'reqType' => $reqType,
+            'data' => $data,
+            'cookies' => $cookies,
+            'headers' => $headers,
+            'redirectType' => $redirectType,
+            'baseLogin' => $baseLogin,
+            'basePass' => $basePass,
+            'autoPickup' => $autoPickup,
+            'throwValues' => $throwValues,
+            'timerEnable' => $timerEnable,
+            'timerVal' => $timerVal
+        ];
+        $answer['OK'] = 0;
+        $answer['presetId'] = $this->getDb($app)->savePreset($presetName, $allData);
+        if ($answer['presetId'] > 0) {
+            $answer['OK'] = 1;
+        }
+        return new JsonResponse($answer);
+    }
+
+    public function deletePreset(Application $app, Request $req)
+    {
+        $answer['OK'] = 0;
+        if ($this->getDb($app)->deletePreset($req->get('presetId', 0))) {
+            $answer['OK'] = 1;
         }
         return new JsonResponse($answer);
     }

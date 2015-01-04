@@ -2,7 +2,6 @@
 return [
     'debug' => true,
     'db' => [
-        'user'     => 'db-user',
-        'password' => 'db-pass'
+        'db_path'  => '../someName.sqlite'
     ]
 ];

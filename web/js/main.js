@@ -230,6 +230,10 @@ var postDataFrame = {
 				this.addRow(varName, this.requestData[varName]);
 			}
 		}
+		var rows = this.postDataContent.find('.row');
+		if (!rows.size()) {
+			this.addDataButton.click();
+		}
 	}
 };
 postDataFrame.init();
@@ -297,6 +301,10 @@ var cookieDataFrame = {
 			if (this.cookieData.hasOwnProperty(cookieName)) {
 				this.addRow(cookieName, this.cookieData[cookieName]);
 			}
+		}
+		var rows = this.cookieDataContent.find('.row');
+		if (!rows.size()) {
+			this.addDataButton.click();
 		}
 	}
 };
@@ -379,6 +387,130 @@ var headerDataFrame = {
 				this.addRow(header, this.headerData[header]);
 			}
 		}
+		var rows = this.headerDataContent.find('.row');
+		if (!rows.size()) {
+			this.addDataButton.click();
+		}
 	}
 };
 headerDataFrame.init();
+
+var loadPresetFrame = {
+	presetsContent: $("#presetsContent"),
+	loadPresetButton: $("#loadPreset"),
+	deletePresetButton: $("#deletePreset"),
+	savePresetButton: $("#savePreset"),
+	presetNameInput: $("#presetName"),
+	quitFromPresetsButton: $("#quitFromPresets"),
+	presets: {},
+	init: function() {
+		var that = this;
+		this.load();
+		this.savePresetButton.click(function(event) {
+			event.preventDefault();
+			that.savePreset();
+		});
+
+		this.presetsContent.on('click', 'li', function() {
+			var el = $(this);
+			that.presetsContent.find('li.active').removeClass('active');
+			el.addClass('active');
+		});
+
+		this.loadPresetButton.click(function(event) {
+			event.preventDefault();
+			var activePresetId = that.presetsContent.find('.active').data('presetid');
+			if (activePresetId) {
+				var data = that.presets[activePresetId];
+				mainForm.urlInputEl.val(data.url);
+				mainForm.sendTypeSelect.val(data.reqType);
+
+				postDataFrame.requestData = data.data;
+				postDataFrame.redraw();
+
+				cookieDataFrame.cookieData = data.cookies;
+				cookieDataFrame.redraw();
+
+				headerDataFrame.headerData = data.headers;
+				headerDataFrame.redraw();
+
+				mainForm.autoRedirectTypeSelect.val(data.redirectType);
+				mainForm.baseLoginInput.val(data.baseLogin);
+				mainForm.basePassInput.val(data.basePass);
+				mainForm.autoPickupCheckbox.prop('checked', data.autoPickup);
+				mainForm.throwValuesCheckbox.prop('checked', data.throwValues);
+				mainForm.timerEnableCheckbox.prop('checkbox', data.timerEnable);
+				mainForm.timerInput.val(data.timerVal);
+				that.quitFromPresetsButton.click();
+			}
+		});
+
+		this.deletePresetButton.click(function(event) {
+			event.preventDefault();
+			var activePreset = that.presetsContent.find('.active');
+			var activePresetId = activePreset.data('presetid');
+			if (activePresetId) {
+				$.post('/deletePreset', {presetId: activePresetId}, function(answ) {
+					if (answ.OK) {
+						activePreset.remove();
+						delete(that.presets[activePresetId]);
+					}
+				}, 'json');
+			}
+		});
+	},
+	load: function() {
+		var that = this;
+		$.get('/loadPresets', {}, function(answ) {
+			if (answ.OK) {
+				for (var i in answ.presets) {
+					if (answ.presets.hasOwnProperty(i)) {
+						console.log(answ);
+						that.presets[i] = answ.presets[i].presetJson;
+						that.presets[i].presetName = answ.presets[i].presetName;
+
+						var liEl = $("<li />", {
+							id: 'preset' + i,
+							'data-presetid': i,
+							html: answ.presets[i].presetName
+						});
+						that.presetsContent.append(liEl);
+					}
+				}
+			}
+		}, 'json');
+	},
+	savePreset: function() {
+		var that = this;
+		var presetName = $.trim(this.presetNameInput.val());
+		if (presetName) {
+			var sendedData = {
+				presetName: that.presetNameInput.val(),
+				url: mainForm.urlInputEl.val(),
+				reqType: mainForm.sendTypeSelect.val(),
+				data: postDataFrame.requestData,
+				cookies: cookieDataFrame.cookieData,
+				headers: headerDataFrame.headerData,
+				redirectType: mainForm.autoRedirectTypeSelect.val(),
+				baseLogin: mainForm.baseLoginInput.val(),
+				basePass: mainForm.basePassInput.val(),
+				autoPickup: mainForm.autoPickupCheckbox.prop('checked'),
+				throwValues: mainForm.throwValuesCheckbox.prop('checked'),
+				timerEnable: mainForm.timerEnableCheckbox.prop('checkbox'),
+				timerVal: mainForm.timerInput.val()
+			};
+			$.post('/savePreset', sendedData, function(answ) {
+				if (answ.OK) {
+					that.presets[answ.presetId] = sendedData;
+					var liEl = $("<li />", {
+						id: 'preset' + answ.presetId,
+						'data-presetid': answ.presetId,
+						html: sendedData.presetName
+					});
+					that.presetsContent.append(liEl);
+				}
+			}, 'json');
+		}
+	}
+};
+loadPresetFrame.init();
