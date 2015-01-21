@@ -125,7 +125,9 @@ var mainForm = {
 			if (answ.isImage) {
 				htmlString = "<img src='" + answ.requestUrl + "'/>";
 			}
-			that.htmlContent.contents().find('html').html(htmlString);
+			try {
+				that.htmlContent.contents().find('html').html(htmlString);
+			} catch (e) {}
 			var headersString = "";
 			for (var headName in answ.headers) {
 				if (answ.headers.hasOwnProperty(headName)) {
@@ -465,7 +467,6 @@ var loadPresetFrame = {
 			if (answ.OK) {
 				for (var i in answ.presets) {
 					if (answ.presets.hasOwnProperty(i)) {
-						console.log(answ);
 						that.presets[i] = answ.presets[i].presetJson;
 						that.presets[i].presetName = answ.presets[i].presetName;
 

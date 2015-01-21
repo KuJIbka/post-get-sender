@@ -4,6 +4,7 @@ namespace Main\Controller;
 
 use Common\Controller\BaseController;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Post\PostBodyInterface;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -76,35 +77,44 @@ class DefaultController extends BaseController
                 $requestQuery->add($name, $this->getMyCodeHelper()->parseString($val));
             }
         }
-        $response = $client->send($request);
-        $res = $response->getBody();
-        $content = $res->getContents();
-        $setCookie = $response->getHeader('Set-Cookie');
-        $cookies = [];
-        if ($setCookie) {
-            foreach (explode(', ', $setCookie) as $cookie) {
-                $splitOptions = explode('; ', $cookie);
-                $split = explode('=', $splitOptions[0]);
-                if (isset($split[1])) {
-                    $cookies[$split[0]] = urldecode($split[1]);
+        $respHeaders = [];
+        try {
+            $response = $client->send($request);
+            $res = $response->getBody();
+            $content = $res->getContents();
+            $setCookie = $response->getHeader('Set-Cookie');
+
+            $cookies = [];
+            if ($setCookie) {
+                foreach (explode(', ', $setCookie) as $cookie) {
+                    $splitOptions = explode('; ', $cookie);
+                    $split = explode('=', $splitOptions[0]);
+                    if (isset($split[1])) {
+                        $cookies[$split[0]] = urldecode($split[1]);
+                    }
                 }
             }
-        }
-        $nextPage = $response->getHeader('Location');
-        $nextPage = $nextPage ? $this->getUrlHelper()->getFullUrl($nextPage, $url) : '';
+            $nextPage = $response->getHeader('Location');
+            $nextPage = $nextPage ? $this->getUrlHelper()->getFullUrl($nextPage, $url) : '';
 
-        if (preg_match("/image/i", $response->getHeader('Content-Type'))) {
-            $content = base64_encode($content);
-            $answer['isImage'] = true;
-        } else {
-            $answer['isImage'] = false;
+            if (preg_match("/image/i", $response->getHeader('Content-Type'))) {
+                $content = base64_encode($content);
+                $answer['isImage'] = true;
+            } else {
+                $answer['isImage'] = false;
+            }
+            $respHeaders = $response->getHeaders();
+        } catch (ConnectException $e) {
+            $res = true;
+            $content = 'Connection error';
+            $nextPage = '';
         }
 
         if ($res) {
             $answer['OK'] = 1;
             $answer['htmlEscaped'] = htmlentities($content);
             $answer['html'] = $content;
-            $answer['headers'] = $response->getHeaders();
+            $answer['headers'] = $respHeaders;
             $answer['reqHeaders'] = $request->getHeaders();
             $answer['setCookies'] = $cookies;
             $answer['nextPage'] = $nextPage;
