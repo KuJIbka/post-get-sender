@@ -32,7 +32,7 @@ class DB
         $st = $this->PDO->query("SELECT * FROM presets");
         $result = [];
         while ($row = $st->fetch(\PDO::FETCH_ASSOC)) {
-            $row['presetJson'] = json_decode($row['presetJson']);
+            $row['presetJson'] = json_decode(base64_decode($row['presetJson']));
             $result[$row['id']] = $row;
         }
         return $result;
@@ -41,7 +41,7 @@ class DB
     public function savePreset($name, $dataArray)
     {
         $sql_q = '
-          INSERT INTO presets (presetName, presetJson) VALUES(\''.$name.'\', \''.json_encode($dataArray).'\');
+          INSERT INTO presets (presetName, presetJson) VALUES("'.$name.'", "'.base64_encode(json_encode($dataArray)).'");
         ';
         $this->PDO->exec($sql_q);
         return $this->PDO->lastInsertId();
