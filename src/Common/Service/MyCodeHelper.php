@@ -26,7 +26,6 @@ class MyCodeHelper
             $hashFunc = $hashMatch[1];
             if ($hashFunc === 'hash_hmac') {
                 if (preg_match("/^hash_hmac\('".$algRegEx."',\s?'([^']+)',\s?'([^']+)'/", $stringValue, $hmacMaches)) {
-                    error_log($hmacMaches[2]);
                     $hashes[] = [
                         'name' => $hashFunc,
                         'alg' => $hmacMaches[1],
