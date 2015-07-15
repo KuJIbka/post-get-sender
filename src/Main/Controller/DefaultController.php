@@ -6,6 +6,7 @@ use Common\Controller\BaseController;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Post\PostBodyInterface;
+use Main\Exceptions\ParseErrorException;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +34,7 @@ class DefaultController extends BaseController
 
         $baseLogin = $req->get('baseLogin', '');
         $basePass = $req->get('basePass', '');
+        $respHeaders = [];
 
         $options = [
             'exceptions' => false,
@@ -58,27 +60,27 @@ class DefaultController extends BaseController
         $url = $this->getUrlHelper()->getFullUrl($url);
 
         $request = $client->createRequest($reqType, $url, $options);
-        if (!empty($headers)) {
-            foreach ($headers as $headName => $val) {
-                $headers[$headName] = $this->getMyCodeHelper()->parseString($val);
-            }
-        }
-        $request->setHeaders($headers);
-        if ($reqType == 'POST') {
-            /** @var PostBodyInterface $requestBody */
-            $requestBody = $request->getBody();
-            foreach ($data as $name => $val) {
-                $requestBody->setField($name, $this->getMyCodeHelper()->parseString($val));
-            }
-        }
-        if ($reqType == 'GET') {
-            $requestQuery = $request->getQuery();
-            foreach ($data as $name => $val) {
-                $requestQuery->add($name, $this->getMyCodeHelper()->parseString($val));
-            }
-        }
-        $respHeaders = [];
         try {
+            if (!empty($headers)) {
+                foreach ($headers as $headName => $val) {
+                    $headers[$headName] = $this->getMyCodeHelper()->parseString($val);
+                }
+            }
+            $request->setHeaders($headers);
+            if ($reqType == 'POST') {
+                /** @var PostBodyInterface $requestBody */
+                $requestBody = $request->getBody();
+                foreach ($data as $name => $val) {
+                    $requestBody->setField($name, $this->getMyCodeHelper()->parseString($val));
+                }
+            }
+            if ($reqType == 'GET') {
+                $requestQuery = $request->getQuery();
+                foreach ($data as $name => $val) {
+                    $requestQuery->add($name, $this->getMyCodeHelper()->parseString($val));
+                }
+            }
+
             $response = $client->send($request);
             $res = $response->getBody();
             $content = $res->getContents();
@@ -107,6 +109,10 @@ class DefaultController extends BaseController
         } catch (ConnectException $e) {
             $res = true;
             $content = 'Connection error';
+            $nextPage = '';
+        } catch (ParseErrorException $e) {
+            $res = true;
+            $content = $e->getMessage();
             $nextPage = '';
         }
 
