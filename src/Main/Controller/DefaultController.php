@@ -4,8 +4,9 @@ namespace Main\Controller;
 
 use Common\Controller\BaseController;
 use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Post\PostBodyInterface;
 use Main\Exceptions\ParseErrorException;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,6 +26,8 @@ class DefaultController extends BaseController
         $answer['OK'] = 0;
 
         $url = $req->get('url', '');
+        preg_match('/https?:\/\/([^\/?]+)/u', $url, $domainSearch);
+        $domain = isset($domainSearch[1]) ? $domainSearch[1] : '';
         $reqType = $req->get('method', 'GET');
 
         $data = $req->get('data', []);
@@ -35,16 +38,23 @@ class DefaultController extends BaseController
         $baseLogin = $req->get('baseLogin', '');
         $basePass = $req->get('basePass', '');
         $respHeaders = [];
-
+        $options = [];
         $options = [
-            'exceptions' => false,
-            'verify' => false
+            'curl' => [
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_SSL_VERIFYPEER => false
+            ],
         ];
         if (!empty($cookies)) {
+            $cookiesJar = new CookieJar();
             foreach ($cookies as $cookName => $val) {
-                $cookies[$cookName] = $this->getMyCodeHelper()->parseString($val);
+                $sc = new SetCookie();
+                $sc->setDomain('.'.$domain);
+                $sc->setName($cookName);
+                $sc->setValue($this->getMyCodeHelper()->parseString($val));
+                $cookiesJar->setCookie($sc);
             }
-            $options['cookies'] = $cookies;
+            $options['cookies'] = $cookiesJar;
         }
 
         if ($redirectType === 1) {
@@ -52,43 +62,47 @@ class DefaultController extends BaseController
         }
 
         if ($baseLogin) {
-            $options['config']['curl'] = [
-                CURLOPT_USERPWD  => $baseLogin.':'.$basePass
-            ];
+            $options['config']['curl'][CURLOPT_USERPWD] = $baseLogin.':'.$basePass;
         }
         $client = new Client();
         $url = $this->getUrlHelper()->getFullUrl($url);
+        if (!empty($headers)) {
+            $options['headers'] = [];
+            foreach ($headers as $headName => $val) {
+                $options['headers'][$headName] = $this->getMyCodeHelper()->parseString($val);
+            }
+        }
 
-        $request = $client->createRequest($reqType, $url, $options);
+        if ($reqType == 'POST') {
+            $options['form_params'] = [];
+            foreach ($data as $name => $val) {
+                $options['form_params'][$name] = $val;
+            }
+        }
+
+        $response = $client->request($reqType, $url, $options);
         try {
-            if (!empty($headers)) {
-                foreach ($headers as $headName => $val) {
-                    $headers[$headName] = $this->getMyCodeHelper()->parseString($val);
-                }
-            }
-            $request->setHeaders($headers);
-            if ($reqType == 'POST') {
-                /** @var PostBodyInterface $requestBody */
-                $requestBody = $request->getBody();
-                foreach ($data as $name => $val) {
-                    $requestBody->setField($name, $this->getMyCodeHelper()->parseString($val));
-                }
-            }
-            if ($reqType == 'GET') {
-                $requestQuery = $request->getQuery();
-                foreach ($data as $name => $val) {
-                    $requestQuery->add($name, $this->getMyCodeHelper()->parseString($val));
-                }
-            }
+//            $request->setHeaders($headers);
+//                /** @var PostBodyInterface $requestBody */
+//                $requestBody = $request->getBody();
+//                foreach ($data as $name => $val) {
+//                    $requestBody->setField($name, $this->getMyCodeHelper()->parseString($val));
+//                }
+//            }
+//            if ($reqType == 'GET') {
+//                $requestQuery = $request->getQuery();
+//                foreach ($data as $name => $val) {
+//                    $requestQuery->add($name, $this->getMyCodeHelper()->parseString($val));
+//                }
+//            }
 
-            $response = $client->send($request);
+            //$response = $client->send($request);
             $res = $response->getBody();
             $content = $res->getContents();
             $setCookie = $response->getHeader('Set-Cookie');
-
             $cookies = [];
-            if ($setCookie) {
-                foreach (explode(', ', $setCookie) as $cookie) {
+            if (!empty($setCookie)) {
+                foreach ($setCookie as $cookie) {
                     $splitOptions = explode('; ', $cookie);
                     $split = explode('=', $splitOptions[0]);
                     if (isset($split[1])) {
@@ -96,10 +110,15 @@ class DefaultController extends BaseController
                     }
                 }
             }
-            $nextPage = $response->getHeader('Location');
+            $headerLocation = isset($response->getHeader('Location')[0])
+                ? $response->getHeader('Location')[0]
+                : '';
+            $nextPage = $headerLocation;
             $nextPage = $nextPage ? $this->getUrlHelper()->getFullUrl($nextPage, $url) : '';
-
-            if (preg_match("/image/i", $response->getHeader('Content-Type'))) {
+            $contentType = isset($response->getHeader('Content-Type')[0])
+                ? $response->getHeader('Content-Type')[0]
+                : '';
+            if (preg_match("/image/i", $contentType)) {
                 $content = base64_encode($content);
                 $answer['isImage'] = true;
             } else {
@@ -114,6 +133,10 @@ class DefaultController extends BaseController
             $res = true;
             $content = $e->getMessage();
             $nextPage = '';
+        } catch (\Exception $e) {
+            $res = true;
+            $content = $e->getMessage();
+            $nextPage = '';
         }
 
         if ($res) {
@@ -121,11 +144,12 @@ class DefaultController extends BaseController
             $answer['htmlEscaped'] = htmlentities($content);
             $answer['html'] = $content;
             $answer['headers'] = $respHeaders;
-            $answer['reqHeaders'] = $request->getHeaders();
+            $answer['reqHeaders'] = $headers;
             $answer['setCookies'] = $cookies;
             $answer['nextPage'] = $nextPage;
             $answer['requestTime'] = microtime(true) - $startTime;
             $answer['requestUrl'] = $url;
+            $answer['statusCode'] = $response->getStatusCode();
         }
         return new JsonResponse($answer);
     }

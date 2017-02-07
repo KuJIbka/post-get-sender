@@ -129,6 +129,7 @@ var mainForm = {
 				that.htmlContent.contents().find('html').html(htmlString);
 			} catch (e) {}
 			var headersString = "";
+            headersString = 'Status Code: ' + answ.statusCode + '<br />';
 			for (var headName in answ.headers) {
 				if (answ.headers.hasOwnProperty(headName)) {
 					headersString += headName + " = " + answ.headers[headName] + "<br />";

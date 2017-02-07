@@ -31,10 +31,9 @@ class UrlHelper
                 $urlWithoutQuery = rtrim($urlMatch[0], '/');
             }
         }
-
         if ($urlText[0] == '/') {
             if ($fromUrl) {
-                $urlText = $fullDomain.$urlText;
+                $urlText = $fullDomain.$urlText[0];
             } else {
                 $preText = 'http';
                 if (isset($_SERVER['HTTPS'])) {
