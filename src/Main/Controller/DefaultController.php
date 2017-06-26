@@ -24,13 +24,15 @@ class DefaultController extends BaseController
     {
         $startTime = microtime(true);
         $answer['OK'] = 0;
-
         $url = $req->get('url', '');
         preg_match('/https?:\/\/([^\/?]+)/u', $url, $domainSearch);
         $domain = isset($domainSearch[1]) ? $domainSearch[1] : '';
         $reqType = $req->get('method', 'GET');
 
         $data = $req->get('data', []);
+        foreach ($data as $name => $val) {
+            $data[$name] = $this->getMyCodeHelper()->parseString($val);
+        }
         $cookies = $req->get('cookies', []);
         $headers = $req->get('headers', []);
         $redirectType = +$req->get('redirectType', 1);
@@ -38,7 +40,6 @@ class DefaultController extends BaseController
         $baseLogin = $req->get('baseLogin', '');
         $basePass = $req->get('basePass', '');
         $respHeaders = [];
-        $options = [];
         $options = [
             'curl' => [
                 CURLOPT_SSL_VERIFYHOST => false,
@@ -78,8 +79,16 @@ class DefaultController extends BaseController
             foreach ($data as $name => $val) {
                 $options['form_params'][$name] = $val;
             }
+        } else {
+            if (strpos($url, '?') !== false) {
+                $url .= '&';
+            } else {
+                $url .= '?';
+            }
+            foreach ($data as $name => $val) {
+                $url .= $name.'='.urldecode($val);
+            }
         }
-
         $response = $client->request($reqType, $url, $options);
         try {
 //            $request->setHeaders($headers);
