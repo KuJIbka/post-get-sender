@@ -86,7 +86,7 @@ class DefaultController extends BaseController
                 $url .= '?';
             }
             foreach ($data as $name => $val) {
-                $url .= $name.'='.urldecode($val);
+                $url .= $name.'='.urldecode($val).'&';
             }
         }
         $response = $client->request($reqType, $url, $options);
