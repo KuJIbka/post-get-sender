@@ -64,6 +64,10 @@ class DefaultController extends BaseController
 
         if ($baseLogin) {
             $options['config']['curl'][CURLOPT_USERPWD] = $baseLogin.':'.$basePass;
+            $options['auth'] = [
+                $baseLogin,
+                $basePass
+            ];
         }
         $client = new Client();
         $url = $this->getUrlHelper()->getFullUrl($url);
@@ -89,8 +93,9 @@ class DefaultController extends BaseController
                 $url .= $name.'='.urldecode($val).'&';
             }
         }
-        $response = $client->request($reqType, $url, $options);
+
         try {
+            $response = $client->request($reqType, $url, $options);
 //            $request->setHeaders($headers);
 //                /** @var PostBodyInterface $requestBody */
 //                $requestBody = $request->getBody();
@@ -158,7 +163,7 @@ class DefaultController extends BaseController
             $answer['nextPage'] = $nextPage;
             $answer['requestTime'] = microtime(true) - $startTime;
             $answer['requestUrl'] = $url;
-            $answer['statusCode'] = $response->getStatusCode();
+            $answer['statusCode'] = isset($response) ? $response->getStatusCode() : 404;
         }
         return new JsonResponse($answer);
     }
