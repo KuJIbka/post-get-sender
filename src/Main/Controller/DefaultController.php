@@ -78,7 +78,7 @@ class DefaultController extends BaseController
             }
         }
 
-        if ($reqType == 'POST') {
+        if ($reqType === 'POST' || $reqType === 'PUT') {
             $options['form_params'] = [];
             foreach ($data as $name => $val) {
                 $options['form_params'][$name] = $val;
